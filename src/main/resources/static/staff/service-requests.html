@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Requests — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Staff Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Staff</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/staff/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/staff/residents.html"><span class="nav-icon">👥</span><span class="nav-label">Residents</span></a>
+      <a href="/staff/gate-logs.html"><span class="nav-icon">🚪</span><span class="nav-label">Gate Logs</span></a>
+      <a href="/staff/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+      <a href="/staff/service-requests.html" class="active"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🔧 Service Requests</h1>
+      <p>View and manage all resident service requests</p>
+    </div>
+
+    <div id="srAlert" class="alert"></div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>All Service Requests</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadRequests()">Refresh</button>
+      </div>
+      <div class="section-card-body">
+        <div id="srTable"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('STAFF');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadRequests();
+}
+
+async function loadRequests() {
+  document.getElementById('srTable').innerHTML = '<div class="spinner"></div>';
+  const res = await apiFetch('/requests');
+  const el = document.getElementById('srTable');
+  if (!res?.success || !res.data.length) { el.innerHTML = emptyState('🔧', 'No service requests submitted yet.'); return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Type</th><th>Resident</th><th>Details</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+    <tbody>${res.data.map(r => `
+      <tr id="sr_${r.id}">
+        <td><strong>${r.serviceType}</strong></td>
+        <td>${r.residentName}</td>
+        <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.details}">${r.details}</td>
+        <td id="srStatus_${r.id}">${badge(r.status)}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${r.status === 'PENDING'
+            ? `<button class="btn btn-warning btn-sm" onclick="updateSR(${r.id},'IN_PROGRESS')">Start</button>`
+            : ''}
+          ${r.status !== 'DONE'
+            ? `<button class="btn btn-success btn-sm" onclick="updateSR(${r.id},'DONE')">Done</button>`
+            : '<span style="color:var(--success);font-size:0.82rem;">✓ Done</span>'}
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function updateSR(id, status) {
+  const alert = document.getElementById('srAlert');
+  const res = await apiFetch('/requests/' + id + '/status', {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  if (!res) return;
+  if (!res.success) { showAlert(alert, res.message); return; }
+  showAlert(alert, `Request marked as ${status}`, 'success');
+  loadRequests();
+}
+</script>
+</body>
+</html>

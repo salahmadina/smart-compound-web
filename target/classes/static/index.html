@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Compound — Login</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/auth.css">
+</head>
+<body class="auth-page">
+
+<div class="auth-box">
+  <div class="auth-header">
+    <div class="logo">🏘️</div>
+    <h1>Smart Compound</h1>
+    <p>Residential Management System</p>
+  </div>
+
+  <div class="auth-body">
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-form="loginForm">Sign In</div>
+      <div class="auth-tab" data-form="signupForm">Create Account</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" class="auth-form active">
+      <div id="loginAlert" class="alert"></div>
+      <div class="form-group">
+        <label for="loginUsername">Username</label>
+        <input id="loginUsername" class="form-control" type="text" placeholder="Enter your username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" class="form-control" type="password" placeholder="Enter your password" required autocomplete="current-password">
+      </div>
+      <button id="loginBtn" type="submit" class="btn btn-primary btn-full">Sign In</button>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form id="signupForm" class="auth-form">
+      <div id="signupAlert" class="alert"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="signupUsername">Username</label>
+          <input id="signupUsername" class="form-control" type="text" placeholder="Choose a username" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">Password</label>
+          <input id="signupPassword" class="form-control" type="password" placeholder="Min 3 characters" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="signupFullName">Full Name</label>
+        <input id="signupFullName" class="form-control" type="text" placeholder="Your full name" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="signupEmail">Email</label>
+          <input id="signupEmail" class="form-control" type="email" placeholder="email@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="signupPhone">Phone (11 digits)</label>
+          <input id="signupPhone" class="form-control" type="text" placeholder="01xxxxxxxxx" maxlength="11" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="signupNationalId">National ID (14 digits)</label>
+          <input id="signupNationalId" class="form-control" type="text" placeholder="14-digit ID" maxlength="14" required>
+        </div>
+        <div class="form-group">
+          <label for="signupAge">Age</label>
+          <input id="signupAge" class="form-control" type="number" placeholder="18+" min="18" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="signupRole">Role</label>
+          <select id="signupRole" class="form-control" required>
+            <option value="RESIDENT">Resident</option>
+            <option value="STAFF">Staff</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="signupDependants">Dependants (optional)</label>
+          <input id="signupDependants" class="form-control" type="text" placeholder="Names of dependants">
+        </div>
+      </div>
+
+      <div id="residentFields">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="signupApartment">Apartment No.</label>
+            <input id="signupApartment" class="form-control" type="number" placeholder="e.g. 5">
+          </div>
+          <div class="form-group">
+            <label for="signupBuilding">Building No.</label>
+            <input id="signupBuilding" class="form-control" type="number" placeholder="e.g. 3">
+          </div>
+        </div>
+      </div>
+
+      <button id="signupBtn" type="submit" class="btn btn-primary btn-full">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+</body>
+</html>

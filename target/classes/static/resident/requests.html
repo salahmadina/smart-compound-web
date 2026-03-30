@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Requests — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Resident Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Resident</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/resident/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/resident/buses.html"><span class="nav-icon">🚌</span><span class="nav-label">Bus Booking</span></a>
+      <a href="/resident/gate.html"><span class="nav-icon">🚪</span><span class="nav-label">Gate Access</span></a>
+      <a href="/resident/requests.html" class="active"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+      <a href="/resident/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🔧 Service Requests</h1>
+      <p>Request maintenance and repair services for your apartment</p>
+    </div>
+
+    <!-- Submit form -->
+    <div class="section-card" style="margin-bottom:24px;">
+      <div class="section-card-header"><h2>New Service Request</h2></div>
+      <div class="section-card-body">
+        <div id="reqAlert" class="alert"></div>
+        <form id="reqForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="serviceType">Service Type</label>
+              <select id="serviceType" class="form-control" required>
+                <option value="">— Select type —</option>
+                <option>Plumbing</option>
+                <option>Electrical</option>
+                <option>Carpentry</option>
+                <option>Painting</option>
+                <option>HVAC</option>
+                <option>Cleaning</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reqDetails">Details</label>
+            <textarea id="reqDetails" class="form-control" placeholder="Describe the issue or work needed…" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- My requests -->
+    <div class="section-card">
+      <div class="section-card-header"><h2>My Requests</h2></div>
+      <div class="section-card-body">
+        <div id="myReqs"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('RESIDENT');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadMyRequests();
+}
+
+document.getElementById('reqForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const alert = document.getElementById('reqAlert');
+  const btn = e.submitter;
+  btn.disabled = true;
+  const res = await apiFetch('/requests', {
+    method: 'POST',
+    body: JSON.stringify({
+      serviceType: document.getElementById('serviceType').value,
+      details: document.getElementById('reqDetails').value,
+    }),
+  });
+  btn.disabled = false;
+  if (!res) return;
+  if (!res.success) { showAlert(alert, res.message); return; }
+  showAlert(alert, 'Request submitted successfully!', 'success');
+  e.target.reset();
+  loadMyRequests();
+});
+
+async function loadMyRequests() {
+  const res = await apiFetch('/requests/my');
+  const el = document.getElementById('myReqs');
+  if (!res?.success || !res.data.length) { el.innerHTML = emptyState('🔧', 'No service requests yet.'); return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Type</th><th>Details</th><th>Status</th><th>Submitted</th></tr></thead>
+    <tbody>${res.data.map(r => `
+      <tr>
+        <td><strong>${r.serviceType}</strong></td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.details}</td>
+        <td>${badge(r.status)}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+</script>
+</body>
+</html>

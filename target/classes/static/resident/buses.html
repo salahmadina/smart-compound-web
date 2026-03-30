@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus Booking — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Resident Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Resident</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/resident/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/resident/buses.html" class="active"><span class="nav-icon">🚌</span><span class="nav-label">Bus Booking</span></a>
+      <a href="/resident/gate.html"><span class="nav-icon">🚪</span><span class="nav-label">Gate Access</span></a>
+      <a href="/resident/requests.html"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+      <a href="/resident/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🚌 Bus Booking</h1>
+      <p>Search available trips and book your seat</p>
+    </div>
+
+    <div id="bookAlert" class="alert"></div>
+
+    <!-- Search -->
+    <div class="section-card">
+      <div class="section-card-header"><h2>Search Trips</h2></div>
+      <div class="section-card-body">
+        <div class="search-bar">
+          <input id="searchInput" class="form-control" type="text" placeholder="Search destination (e.g. Downtown, Airport, Mall…)">
+          <button class="btn btn-primary" onclick="searchTrips()">Search</button>
+          <button class="btn btn-outline" onclick="loadAllBuses()">Show All</button>
+        </div>
+        <div id="tripResults"></div>
+      </div>
+    </div>
+
+    <!-- My Bookings -->
+    <div class="section-card">
+      <div class="section-card-header"><h2>My Bookings</h2></div>
+      <div class="section-card-body">
+        <div id="myBookings"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('RESIDENT');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadAllBuses();
+  loadMyBookings();
+}
+
+async function loadAllBuses() {
+  document.getElementById('tripResults').innerHTML = '<div class="spinner"></div>';
+  const res = await apiFetch('/buses');
+  if (!res?.success) return;
+  const trips = res.data.flatMap(bus =>
+    (bus.trips || []).map(t => ({ ...t, busCode: bus.busCode, stops: bus.stops }))
+  );
+  renderTrips(trips);
+}
+
+async function searchTrips() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return loadAllBuses();
+  document.getElementById('tripResults').innerHTML = '<div class="spinner"></div>';
+  const res = await apiFetch('/buses/search?destination=' + encodeURIComponent(q));
+  if (!res?.success) return;
+  renderTrips(res.data);
+}
+
+function renderTrips(trips) {
+  const el = document.getElementById('tripResults');
+  if (!trips.length) { el.innerHTML = emptyState('🚌', 'No trips found for this destination.'); return; }
+  el.innerHTML = '<div class="trip-grid">' + trips.map(t => `
+    <div class="trip-card">
+      <div class="trip-dest">${t.destination}</div>
+      <div class="trip-meta">
+        <span>🚌 ${t.busCode}</span>
+        <span>🕐 ${t.departureTime} → ${t.arrivalTime}</span>
+      </div>
+      <div class="trip-price">EGP ${t.farePerSeat?.toFixed ? t.farePerSeat.toFixed(2) : t.farePerSeat} / seat</div>
+      <div class="trip-seats">Seats available: <strong>${t.availableSeats}</strong></div>
+      <div class="seat-picker">
+        <label>Seats:</label>
+        <input id="seats_${t.id}" class="form-control" type="number" value="1" min="1" max="${t.availableSeats}">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="bookTrip(${t.id})">Book Now</button>
+    </div>
+  `).join('') + '</div>';
+}
+
+async function bookTrip(tripId) {
+  const seats = parseInt(document.getElementById('seats_' + tripId).value);
+  const alert = document.getElementById('bookAlert');
+  const res = await apiFetch('/buses/book', { method: 'POST', body: JSON.stringify({ tripId, seats }) });
+  if (!res) return;
+  if (!res.success) { showAlert(alert, res.message); return; }
+  showAlert(alert, `Booking confirmed! Total: EGP ${res.data.totalFare.toFixed(2)}`, 'success');
+  loadAllBuses();
+  loadMyBookings();
+}
+
+async function loadMyBookings() {
+  const res = await apiFetch('/buses/bookings/my');
+  const el = document.getElementById('myBookings');
+  if (!res?.success || !res.data.length) { el.innerHTML = emptyState('🎟️', 'No bookings yet.'); return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Bus</th><th>Destination</th><th>Departure</th><th>Arrival</th><th>Seats</th><th>Total Fare</th><th>Booked At</th></tr></thead>
+    <tbody>${res.data.map(b => `
+      <tr>
+        <td>${b.busCode}</td>
+        <td>${b.destination}</td>
+        <td>${b.departureTime}</td>
+        <td>${b.arrivalTime}</td>
+        <td>${b.seatsBooked}</td>
+        <td>EGP ${b.totalFare.toFixed(2)}</td>
+        <td>${fmtDate(b.bookedAt)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchTrips(); });
+</script>
+</body>
+</html>

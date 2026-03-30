@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gate Access — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Resident Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Resident</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/resident/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/resident/buses.html"><span class="nav-icon">🚌</span><span class="nav-label">Bus Booking</span></a>
+      <a href="/resident/gate.html" class="active"><span class="nav-icon">🚪</span><span class="nav-label">Gate Access</span></a>
+      <a href="/resident/requests.html"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+      <a href="/resident/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🚪 Gate Access</h1>
+      <p>Use your QR token to log entry and exit through compound gates</p>
+    </div>
+
+    <div id="gateAlert" class="alert"></div>
+
+    <!-- QR Token -->
+    <div class="section-card" style="margin-bottom:24px;">
+      <div class="section-card-header"><h2>Your QR Token</h2></div>
+      <div class="section-card-body">
+        <div class="qr-display">
+          <div style="font-size:3rem;">📱</div>
+          <p style="color:var(--text-light);font-size:0.9rem;margin:8px 0;">Your unique access token</p>
+          <div class="qr-token" id="qrToken">Loading…</div>
+          <button class="btn btn-outline" style="margin-top:12px;" onclick="loadQr()">Refresh Token</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gates -->
+    <div class="section-card">
+      <div class="section-card-header"><h2>Compound Gates</h2></div>
+      <div class="section-card-body">
+        <div class="gate-grid" id="gateGrid">Loading gates…</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('RESIDENT');
+let qrToken = null;
+
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadQr();
+  loadGates();
+}
+
+async function loadQr() {
+  const res = await apiFetch('/gates/qr');
+  if (res?.success) {
+    qrToken = res.data;
+    document.getElementById('qrToken').textContent = qrToken;
+  }
+}
+
+async function loadGates() {
+  const res = await apiFetch('/gates');
+  if (!res?.success) return;
+  const grid = document.getElementById('gateGrid');
+  grid.innerHTML = res.data.map(g => `
+    <div class="gate-card">
+      <h3>Gate ${g.gateNumber}</h3>
+      <p>${g.location}</p>
+      <div class="gate-actions">
+        <button class="btn btn-success btn-sm" onclick="access(${g.id}, 'enter')">Enter</button>
+        <button class="btn btn-danger btn-sm"  onclick="access(${g.id}, 'exit')">Exit</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function access(gateId, action) {
+  const alert = document.getElementById('gateAlert');
+  if (!qrToken) { showAlert(alert, 'QR token not loaded. Please wait and try again.'); return; }
+  const url = `/gates/${gateId}/${action}`;
+  const res = await apiFetch(url, { method: 'POST', body: JSON.stringify({ token: qrToken }) });
+  if (!res) return;
+  showAlert(alert, res.message, res.success ? 'success' : 'error');
+}
+</script>
+</body>
+</html>

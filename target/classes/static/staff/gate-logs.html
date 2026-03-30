@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gate Logs — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Staff Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Staff</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/staff/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/staff/residents.html"><span class="nav-icon">👥</span><span class="nav-label">Residents</span></a>
+      <a href="/staff/gate-logs.html" class="active"><span class="nav-icon">🚪</span><span class="nav-label">Gate Logs</span></a>
+      <a href="/staff/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+      <a href="/staff/service-requests.html"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🚪 Gate Access Logs</h1>
+      <p>Full audit trail of compound gate entries and exits</p>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>Access Log</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadLogs()">Refresh</button>
+      </div>
+      <div class="section-card-body">
+        <div id="logTable"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('STAFF');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadLogs();
+}
+
+async function loadLogs() {
+  document.getElementById('logTable').innerHTML = '<div class="spinner"></div>';
+  const res = await apiFetch('/gates/logs');
+  const el = document.getElementById('logTable');
+  if (!res?.success || !res.data.length) { el.innerHTML = emptyState('🚪', 'No gate access events recorded yet.'); return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Resident</th><th>Username</th><th>Gate</th><th>Location</th><th>Action</th><th>Time</th></tr></thead>
+    <tbody>${res.data.map(l => `
+      <tr>
+        <td><strong>${l.fullName}</strong></td>
+        <td>${l.username}</td>
+        <td>Gate ${l.gateNumber}</td>
+        <td>${l.gateLocation}</td>
+        <td>${badge(l.action)}</td>
+        <td>${fmtDate(l.loggedAt)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+</script>
+</body>
+</html>

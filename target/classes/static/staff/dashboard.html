@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Dashboard — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Staff Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Staff</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/staff/dashboard.html" class="active"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/staff/residents.html"><span class="nav-icon">👥</span><span class="nav-label">Residents</span></a>
+      <a href="/staff/gate-logs.html"><span class="nav-icon">🚪</span><span class="nav-label">Gate Logs</span></a>
+      <a href="/staff/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+      <a href="/staff/service-requests.html"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Staff Dashboard</h1>
+      <p>Compound management overview</p>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">Total Residents</div><div class="stat-value" id="statResidents">…</div></div>
+      <div class="stat-card"><div class="stat-label">Assigned Reports</div><div class="stat-value" id="statReports">…</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Requests</div><div class="stat-value" id="statRequests">…</div></div>
+      <div class="stat-card"><div class="stat-label">Gate Events Today</div><div class="stat-value" id="statGate">…</div></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:12px;">Your Profile</h2>
+      <div id="profileDetails" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:0.9rem;">Loading…</div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('STAFF');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+
+  document.getElementById('profileDetails').innerHTML = `
+    <div><strong>Full Name:</strong> ${user.fullName}</div>
+    <div><strong>Username:</strong> ${user.username}</div>
+    <div><strong>Email:</strong> ${user.email}</div>
+    <div><strong>Phone:</strong> ${user.phone}</div>
+    <div><strong>National ID:</strong> ${user.nationalId}</div>
+    <div><strong>Age:</strong> ${user.age}</div>
+  `;
+
+  apiFetch('/users/residents').then(r => {
+    document.getElementById('statResidents').textContent = r?.data?.length ?? '0';
+  });
+  apiFetch('/reports').then(r => {
+    document.getElementById('statReports').textContent = r?.data?.length ?? '0';
+  });
+  apiFetch('/requests').then(r => {
+    const pending = (r?.data || []).filter(x => x.status === 'PENDING').length;
+    document.getElementById('statRequests').textContent = pending;
+  });
+  apiFetch('/gates/logs').then(r => {
+    const today = new Date().toDateString();
+    const todayCount = (r?.data || []).filter(x => new Date(x.loggedAt).toDateString() === today).length;
+    document.getElementById('statGate').textContent = todayCount;
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residents — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Staff Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Staff</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/staff/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/staff/residents.html" class="active"><span class="nav-icon">👥</span><span class="nav-label">Residents</span></a>
+      <a href="/staff/gate-logs.html"><span class="nav-icon">🚪</span><span class="nav-label">Gate Logs</span></a>
+      <a href="/staff/reports.html"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+      <a href="/staff/service-requests.html"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>👥 Residents</h1>
+      <p>View and manage all compound residents</p>
+    </div>
+
+    <div id="resAlert" class="alert"></div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>All Residents</h2>
+        <span id="resCount" style="font-size:0.85rem;color:var(--text-light);"></span>
+      </div>
+      <div class="section-card-body">
+        <div id="residentTable"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('STAFF');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadResidents();
+}
+
+async function loadResidents() {
+  const res = await apiFetch('/users/residents');
+  const el = document.getElementById('residentTable');
+  if (!res?.success || !res.data.length) { el.innerHTML = emptyState('👥', 'No residents registered yet.'); return; }
+  document.getElementById('resCount').textContent = res.data.length + ' residents';
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Phone</th><th>Apt</th><th>Bldg</th><th>Dependants</th><th>Action</th></tr></thead>
+    <tbody id="resBody">${res.data.map(r => `
+      <tr id="row_${r.id}">
+        <td><strong>${r.fullName}</strong></td>
+        <td>${r.username}</td>
+        <td>${r.email}</td>
+        <td>${r.phone}</td>
+        <td>${r.apartmentNum ?? '—'}</td>
+        <td>${r.buildingNum ?? '—'}</td>
+        <td>${r.dependants || '—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="removeResident(${r.id}, '${r.fullName}')">Remove</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function removeResident(id, name) {
+  if (!confirm(`Remove resident "${name}"? This cannot be undone.`)) return;
+  const alert = document.getElementById('resAlert');
+  const res = await apiFetch('/users/' + id, { method: 'DELETE' });
+  if (!res) return;
+  if (!res.success) { showAlert(alert, res.message); return; }
+  showAlert(alert, `${name} has been removed.`, 'success');
+  document.getElementById('row_' + id)?.remove();
+}
+</script>
+</body>
+</html>

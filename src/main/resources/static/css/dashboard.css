@@ -1,0 +1,173 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 240px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-brand .brand-icon { font-size: 1.8rem; }
+.sidebar-brand h2 { font-size: 1rem; font-weight: 700; color: #fff; margin-top: 6px; line-height: 1.2; }
+.sidebar-brand p  { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+.sidebar-user {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-user .avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.sidebar-user .user-info { overflow: hidden; }
+.sidebar-user .user-name { font-size: 0.85rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user .user-role { font-size: 0.72rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.sidebar-nav { flex: 1; padding: 12px 0; }
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  border-left: 3px solid transparent;
+}
+.sidebar-nav a:hover { background: var(--sidebar-hover); color: #fff; }
+.sidebar-nav a.active { background: rgba(52,152,219,0.15); color: #fff; border-left-color: var(--accent); }
+.sidebar-nav .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+.sidebar-nav .nav-label { flex: 1; }
+
+.sidebar-bottom {
+  padding: 12px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-bottom a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 20px;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 0.88rem;
+  transition: color 0.15s;
+  cursor: pointer;
+}
+.sidebar-bottom a:hover { color: var(--danger); }
+
+/* ── Main content ── */
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  padding: 28px;
+  min-height: 100vh;
+}
+
+/* ── Section card ── */
+.section-card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+.section-card-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-card-header h2 { font-size: 1rem; font-weight: 700; }
+.section-card-body { padding: 24px; }
+
+/* ── QR Code display ── */
+.qr-display {
+  background: #fff;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+}
+.qr-token {
+  font-family: monospace;
+  font-size: 0.85rem;
+  background: #f8f9fa;
+  padding: 10px 14px;
+  border-radius: 6px;
+  word-break: break-all;
+  color: var(--text);
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+.qr-canvas { margin: 0 auto; display: block; }
+
+/* ── Gate buttons ── */
+.gate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gate-card {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+.gate-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+.gate-card p  { font-size: 0.82rem; color: var(--text-light); margin-bottom: 16px; }
+.gate-actions { display: flex; gap: 8px; justify-content: center; }
+
+/* ── Search bar ── */
+.search-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.search-bar .form-control { flex: 1; }
+
+/* ── Trip cards ── */
+.trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.trip-card {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.trip-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(52,152,219,0.12); }
+.trip-card .trip-dest { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.trip-card .trip-meta { font-size: 0.82rem; color: var(--text-light); margin-bottom: 12px; }
+.trip-card .trip-meta span { margin-right: 10px; }
+.trip-card .trip-price { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+.trip-card .trip-seats { font-size: 0.82rem; color: var(--text-light); }
+.seat-picker { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+.seat-picker input { width: 60px; text-align: center; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .sidebar { width: 200px; }
+  .main-content { margin-left: 200px; padding: 16px; }
+  .gate-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}

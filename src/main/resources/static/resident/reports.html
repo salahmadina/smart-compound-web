@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Issue Reports — Smart Compound</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon">🏘️</div><h2>Smart Compound</h2><p>Resident Portal</p></div>
+    <div class="sidebar-user"><div class="avatar" id="sidebarAvatar">?</div><div class="user-info"><div class="user-name" id="sidebarName">…</div><div class="user-role">Resident</div></div></div>
+    <nav class="sidebar-nav">
+      <a href="/resident/dashboard.html"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+      <a href="/resident/buses.html"><span class="nav-icon">🚌</span><span class="nav-label">Bus Booking</span></a>
+      <a href="/resident/gate.html"><span class="nav-icon">🚪</span><span class="nav-label">Gate Access</span></a>
+      <a href="/resident/requests.html"><span class="nav-icon">🔧</span><span class="nav-label">Service Requests</span></a>
+      <a href="/resident/reports.html" class="active"><span class="nav-icon">📋</span><span class="nav-label">Issue Reports</span></a>
+    </nav>
+    <div class="sidebar-bottom"><a onclick="logout()"><span class="nav-icon">🚪</span><span>Logout</span></a></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>📋 Issue Reports</h1>
+      <p>Report problems in the compound — they'll be auto-assigned to staff</p>
+    </div>
+
+    <!-- Submit form -->
+    <div class="section-card" style="margin-bottom:24px;">
+      <div class="section-card-header"><h2>Submit a Report</h2></div>
+      <div class="section-card-body">
+        <div id="reportAlert" class="alert"></div>
+        <form id="reportForm">
+          <div class="form-group">
+            <label for="issueType">Issue Type</label>
+            <select id="issueType" class="form-control" required>
+              <option value="">— Select type —</option>
+              <option>Noise</option>
+              <option>Maintenance</option>
+              <option>Security</option>
+              <option>Cleanliness</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportDesc">Description</label>
+            <textarea id="reportDesc" class="form-control" rows="4" placeholder="Describe the issue in detail…" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit Report</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- My reports -->
+    <div class="section-card">
+      <div class="section-card-header"><h2>My Reports</h2></div>
+      <div class="section-card-body">
+        <div id="myReports"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = requireRole('RESIDENT');
+if (user) {
+  document.getElementById('sidebarAvatar').textContent = user.fullName.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = user.fullName;
+  loadMyReports();
+}
+
+document.getElementById('reportForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const alert = document.getElementById('reportAlert');
+  const btn = e.submitter;
+  btn.disabled = true;
+  const res = await apiFetch('/reports', {
+    method: 'POST',
+    body: JSON.stringify({
+      issueType: document.getElementById('issueType').value,
+      description: document.getElementById('reportDesc').value,
+    }),
+  });
+  btn.disabled = false;
+  if (!res) return;
+  if (!res.success) { showAlert(alert, res.message); return; }
+  showAlert(alert, `Report submitted and assigned to: ${res.data.assignedStaffName || 'staff'}`, 'success');
+  e.target.reset();
+  loadMyReports();
+});
+
+async function loadMyReports() {
+  const res = await apiFetch('/reports/my');
+  const el = document.getElementById('myReports');
+  if (!res?.success || !res.data.length) { el.innerHTML = emptyState('📋', 'No reports submitted yet.'); return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Type</th><th>Description</th><th>Assigned To</th><th>Status</th><th>Submitted</th></tr></thead>
+    <tbody>${res.data.map(r => `
+      <tr>
+        <td><strong>${r.issueType}</strong></td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.description}</td>
+        <td>${r.assignedStaffName || '—'}</td>
+        <td>${badge(r.status)}</td>
+        <td>${fmtDate(r.createdAt)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+</script>
+</body>
+</html>
